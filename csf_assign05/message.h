@@ -25,6 +25,18 @@ struct Message {
     std::vector<std::string> result;
     // TODO: split the message data into fields separated by ':', add them
     //       to result vector
+    /*
+    std::stringstream in_stream;
+    result[0] = getline(in_stream,tag,':');
+    result[1] = result[0] + 1;
+    result[2] = result[1] + getline(in_stream, tag,)
+    */
+    //Do we need to error check?
+    result.push_back(tag);
+    result.push_back(":");
+    result.push_back(data);
+
+
     return result;
   }
 };
