@@ -50,7 +50,6 @@ int main(int argc, char **argv) {
     message.data = data;
     if (data == "/leave") {
       message.tag = TAG_LEAVE;
-      done = true;
     } else if (data == "/join") {
       message.tag = TAG_JOIN;
     } else if (data == "/quit") {
@@ -69,7 +68,7 @@ int main(int argc, char **argv) {
     conn.send(message);
     conn.receive(verify);
   }
-  
+
   conn.close();
 
   return 0;
