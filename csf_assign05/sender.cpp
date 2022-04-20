@@ -22,23 +22,24 @@ int main(int argc, char **argv) {
   username = argv[3];
 
   // TODO: connect to server
-  Connection conn(); 
-  conn.connect(server_hostname, server_port);
+  Connection conn; 
+  conn.Connection::connect(server_hostname, server_port);
   // checks if connection is open
-  if (!conn.is_open) {
-    cerr << "Failed to connect to server\n";
+  if (!conn.Connection::is_open()) {
+    std::cerr << "Failed to connect to server\n";
     return 2;
   }
 
-  Message message = new Message(username, TAG_SLOGIN);
-  Message verify = new Message(username, TAG_OK);
+  struct Message message(TAG_SLOGIN, username);
+  struct Message verify(TAG_OK, "ok");
 
   // TODO: send slogin message
-  conn.send(message);
-  conn.receive(verify);
-  message = new Message(username, TAG_JOIN);
-  conn.send(message);
-  conn.receive(verify);
+  conn.Connection::send(message);
+  conn.Connection::receive(verify);
+  // message.tag = TAG_JOIN;
+  // message.data = 
+  conn.Connection::send(message);
+  conn.Connection::receive(verify);
 
   //declaring message formation objects
   std::string data;
@@ -47,10 +48,11 @@ int main(int argc, char **argv) {
 
   // TODO: loop reading commands from user, sending messages to
   //       server as appropriate
+  message.tag = username;
   while (!done) {
-    std::getline(std::cin, message);
+    std::getline(std::cin, data);
     ss << data;
-    message = new Message(username, message);
+    message.data = data;
     if (message.data == "/leave") {
       done = true;
     }
@@ -58,7 +60,7 @@ int main(int argc, char **argv) {
     conn.receive(verify);
   }
 
-  message = new Message(username, TAG_QUIT);
+  message.tag = TAG_QUIT;
   conn.send(message);
   conn.receive(verify);
   conn.close();
