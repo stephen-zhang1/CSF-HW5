@@ -35,34 +35,41 @@ int main(int argc, char **argv) {
 
   // TODO: send slogin message
   conn.Connection::send(message);
-  conn.Connection::receive(verify);
-  // message.tag = TAG_JOIN;
-  // message.data = 
-  conn.Connection::send(message);
-  conn.Connection::receive(verify);
+  conn.Connection::receive(verify); // 
 
   //declaring message formation objects
   std::string data;
   std::stringstream ss;
-  bool done = false;
+  bool is_done = false;
 
   // TODO: loop reading commands from user, sending messages to
   //       server as appropriate
-  message.tag = username;
-  while (!done) {
+  while (!is_done) {
+    std::getline(std::cin, data, ' ');
+    ss << data;
+    message.data = data;
+    if (data == "/leave") {
+      message.tag = TAG_LEAVE;
+      done = true;
+    } else if (data == "/join") {
+      message.tag = TAG_JOIN;
+    } else if (data == "/quit") {
+      message.tag = TAG_QUIT;
+      is_done = true;
+    } else {
+      message.tag = TAG_SENDALL;
+      message.data = data;
+    }
+    if (message.tag != TAG_SENDALL) {
     std::getline(std::cin, data);
     ss << data;
     message.data = data;
-    if (message.data == "/leave") {
-      done = true;
     }
+    message.split_payload();
     conn.send(message);
     conn.receive(verify);
   }
-
-  message.tag = TAG_QUIT;
-  conn.send(message);
-  conn.receive(verify);
+  
   conn.close();
 
   return 0;
