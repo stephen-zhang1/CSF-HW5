@@ -6,6 +6,7 @@
 #include "connection.h"
 
 #include <iostream>
+#include <algorithm>
 
 Connection::Connection()
   : m_fd(-1)
@@ -86,6 +87,12 @@ bool Connection::receive(Message &msg) {
   char * cstring_message = new char[msg.MAX_LEN];
   
   ssize_t line = rio_readlineb(&m_fdbuf, cstring_message, msg.MAX_LEN);
+  
+  int count_of_colon = std::count(cstring_message, cstring_message + msg.MAX_LEN, ':');
+  if (count_of_colon != 1) {
+    m_last_result = INVALID_MSG;
+    return false;
+  }
   //Confused what to do from here, what does readlineb return
 
   //If we split the array maybe check if its equal to msg.tag and msg.data
@@ -97,12 +104,12 @@ bool Connection::receive(Message &msg) {
   std::string c(cstring_message);
   int tag_length = colon_found - cstring_message + 1;
   std::string tag_string = c.substr(0,tag_length - 1);
-  std::string payload_string = c.substr(tag_length);
-  if (tag_string == msg.tag) {
+  std::string payload_string = c.substr(tag_length + 1);
+  
+  if (tag_string == msg.tag && payload_string == msg.data && line == (ssize_t)strlen(cstring_message)) {
+    m_last_result = SUCCESS;
     return true;
   }
-  if (payload_string == msg.data) {
-    return true;
-  }
+  m_last_result = INVALID_MSG;
   return false;
 }
