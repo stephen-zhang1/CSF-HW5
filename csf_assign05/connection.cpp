@@ -57,14 +57,20 @@ bool Connection::send(const Message &msg) {
   // return true if successful, false if not
   // make sure that m_last_result is set appropriately
 
+  //get the vector that holds the payload
   std::vector<std::string> message_string = msg.split_payload();
+  std::string data;
+  for (std::vector<std::string>::iterator it = message_string.begin() ; it != message_string.end(); ++it) {
+    data = data + *it;
+  }
+
   //C string to copy over result from split_payload
-  char * cmsg_str = new char[message_string[0].length() + message_string[1].length() + message_string[2].length() + 1];
+  char * cmsg_str = new char[msg.MAX_LEN];
 
   //Make a string to copy into the C string
-  std::string message = message_string[0] + message_string[1] + message_string[2];
+  std::string message = msg.tag + ":" + data + "\n";
   strcpy (cmsg_str, message.c_str());
-
+  
   //Check if the bytes written is the same as length of the C string
   ssize_t bytes_written = rio_writen(m_fd, cmsg_str, msg.MAX_LEN);
   if (bytes_written == (ssize_t)strlen(cmsg_str)) {
@@ -86,27 +92,34 @@ bool Connection::receive(Message &msg) {
   std::vector<std::string> string_message = msg.split_payload(); //["TAG", ":", "PAYLOAD"]
   char * cstring_message = new char[msg.MAX_LEN];
   
+  //Confused what to do from here, what does readlineb return
   ssize_t line = rio_readlineb(&m_fdbuf, cstring_message, msg.MAX_LEN);
   
+  //char buffer string
+  //chop at the colon
+  //insert tag into msg.tag
+  //insert payload into msg.payload
+  //done 
+  //error if i read 0 or less than 0
+  //Make sure that there is only 1 colon in the c string
   int count_of_colon = std::count(cstring_message, cstring_message + msg.MAX_LEN, ':');
   if (count_of_colon != 1) {
     m_last_result = INVALID_MSG;
     return false;
   }
-  //Confused what to do from here, what does readlineb return
 
   //If we split the array maybe check if its equal to msg.tag and msg.data
-  char * colon_found = strchr(cstring_message, ':');
-  if (colon_found == NULL) {
-    m_last_result = INVALID_MSG;
-    return false;
-  }
+  char* tag_index = strchr(cstring_message, ':');
   std::string c(cstring_message);
-  int tag_length = colon_found - cstring_message + 1;
+  int tag_length = tag_index - cstring_message + 1;
   std::string tag_string = c.substr(0,tag_length - 1);
   std::string payload_string = c.substr(tag_length + 1);
   
-  if (tag_string == msg.tag && payload_string == msg.data && line == (ssize_t)strlen(cstring_message)) {
+  msg.tag = tag_string;
+  msg.data = payload_string;
+
+  //Check if the tag matches, payload matches, and the size of the message read is the same
+  if (line == (ssize_t)strlen(cstring_message)) {
     m_last_result = SUCCESS;
     return true;
   }
