@@ -30,16 +30,19 @@ int main(int argc, char **argv) {
     return 2;
   }
 
+  Message message = new Message(username, TAG_SLOGIN);
+  Message verify = new Message(username, TAG_OK);
+
   // TODO: send slogin message
-  conn.send(TAG_SLOGIN);
-  conn.receive(TAG_OK);
-  conn.send(TAG_JOIN);
-  conn.receive(TAG_OK);
+  conn.send(message);
+  conn.receive(verify);
+  message = new Message(username, TAG_JOIN);
+  conn.send(message);
+  conn.receive(verify);
 
   //declaring message formation objects
   std::string data;
   std::stringstream ss;
-  Message message;
   bool done = false;
 
   // TODO: loop reading commands from user, sending messages to
@@ -48,15 +51,16 @@ int main(int argc, char **argv) {
     std::getline(std::cin, message);
     ss << data;
     message = new Message(username, message);
-    if (message == "/leave") {
+    if (message.data == "/leave") {
       done = true;
     }
     conn.send(message);
-    conn.receive(TAG_OK);
+    conn.receive(verify);
   }
 
-  conn.send(TAG_QUIT);
-  conn.receive(TAG_OK);
+  message = new Message(username, TAG_QUIT);
+  conn.send(message);
+  conn.receive(verify);
   conn.close();
 
   return 0;
