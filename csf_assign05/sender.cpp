@@ -35,7 +35,11 @@ int main(int argc, char **argv) {
 
   // TODO: send slogin message
   conn.Connection::send(message);
-  conn.Connection::receive(verify); // 
+  conn.Connection::receive(message); 
+  if (message.tag == TAG_ERR) {
+    std::cerr << "Login failed\n";
+    return 3;  
+  }
 
   //declaring message formation objects
   std::string data;
@@ -45,28 +49,27 @@ int main(int argc, char **argv) {
   // TODO: loop reading commands from user, sending messages to
   //       server as appropriate
   while (!is_done) {
-    std::getline(std::cin, data, ' ');
-    ss << data;
+    cout << ">";
+    std::getline(std::cin, data);
     message.data = data;
     if (data == "/leave") {
       message.tag = TAG_LEAVE;
+    } else if (data == "/join" && message.tag != TAG_LEAVE) {
+      std::cerr << "Cannot join a room without leaving current room\n";
     } else if (data == "/join") {
       message.tag = TAG_JOIN;
     } else if (data == "/quit") {
       message.tag = TAG_QUIT;
       is_done = true;
-    } else {
+      // TODO: Add condition for other '/' commands?
+    } else { //check if tag can be sent
       message.tag = TAG_SENDALL;
-      message.data = data;
     }
-    if (message.tag != TAG_SENDALL) {
-    std::getline(std::cin, data);
-    ss << data;
-    message.data = data;
+    conn.Connection::send(message);
+    conn.Connection::receive(message);
+    if (message.tag == TAG_ERR) {
+      std::cerr << message.data << "\n";
     }
-    message.split_payload();
-    conn.send(message);
-    conn.receive(verify);
   }
 
   conn.close();
