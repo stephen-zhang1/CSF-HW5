@@ -67,6 +67,7 @@ int main(int argc, char **argv) {
     } else {
     std::vector<std::string> payload = message.split_payload();
     std::cout << "[" << payload[1] << "]: [" << payload[2] << "]\n"; 
+    }
   }
 
   conn.close();

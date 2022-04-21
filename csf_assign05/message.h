@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string>
+#include <sstream>
 
 struct Message {
   // An encoded message may have at most this many characters,
@@ -42,6 +43,7 @@ struct Message {
       colon_location = strchr(colon_location + 1,':'); //shift to look at where the next colon is
     }
     */
+
     std::istringstream input;
     input.str(data);
     for (std::string line; std::getline(input, line, ':'); ) {
