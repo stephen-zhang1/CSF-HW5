@@ -145,7 +145,7 @@ bool Connection::receive(Message &msg) {
   msg.data = payload_string;
 
   //check for error tag
-  if (msg.tag == "err") {
+  if (msg.tag == TAG_ERR) {
     m_last_result = EOF_OR_ERROR;
     return false;
   }
