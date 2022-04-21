@@ -27,6 +27,7 @@ struct Message {
     //       to result vector
     // text:asdasdas:asdcewfcwes:ewsdfcwefrsdg:wesfdcqwazff
     //split data separated by : and then add it to the result
+    /*
     const char * colon_location = strchr(data.c_str(), ':'); //chunk of text before colon
     std::string new_input;
     int colon_index = 0;
@@ -40,6 +41,13 @@ struct Message {
       result.push_back(new_input); // add chunk of text before colon to vector
       colon_location = strchr(colon_location + 1,':'); //shift to look at where the next colon is
     }
+    */
+    std::istringstream input;
+    input.str(data);
+    for (std::string line; std::getline(input, line, ':'); ) {
+        result.push_back(line);
+    }
+
     
     return result;
   }

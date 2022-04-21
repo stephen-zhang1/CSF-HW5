@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
   // TODO: loop reading commands from user, sending messages to
   //       server as appropriate
   while (!is_done) {
-    cout << ">";
+    std::cout << ">";
     std::getline(std::cin, data);
     message.data = data;
     if (data == "/leave") {

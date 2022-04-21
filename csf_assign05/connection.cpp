@@ -92,8 +92,11 @@ bool Connection::receive(Message &msg) {
   std::vector<std::string> string_message = msg.split_payload(); //["TAG", ":", "PAYLOAD"]
   char * cstring_message = new char[msg.MAX_LEN];
   
-  //Confused what to do from here, what does readlineb return
   ssize_t line = rio_readlineb(&m_fdbuf, cstring_message, msg.MAX_LEN);
+  
+  //std::string st(cstring_message);
+  
+
   
   //char buffer string
   //chop at the colon
@@ -105,6 +108,11 @@ bool Connection::receive(Message &msg) {
   int count_of_colon = std::count(cstring_message, cstring_message + msg.MAX_LEN, ':');
   if (count_of_colon != 1) {
     m_last_result = INVALID_MSG;
+    return false;
+  }
+
+  if (line <= 0) {
+    m_last_result = EOF_OR_ERROR;
     return false;
   }
 
