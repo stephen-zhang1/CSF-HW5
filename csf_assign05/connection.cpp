@@ -107,7 +107,7 @@ bool Connection::receive(Message &msg) {
 
   //check if u can split it in half at the colon for error handling
   //if it can be split then the message is valid
-  std::vector<std::string> string_message = msg.split_payload(); //["TAG", ":", "PAYLOAD"]
+  //std::vector<std::string> string_message = msg.split_payload(); //["TAG", ":", "PAYLOAD"]
   char * cstring_message = new char[msg.MAX_LEN];
   
   ssize_t line = rio_readlineb(&m_fdbuf, cstring_message, msg.MAX_LEN);
@@ -125,7 +125,7 @@ bool Connection::receive(Message &msg) {
   //Make sure that there is only 1 colon in the c string
   int count_of_colon = std::count(cstring_message, cstring_message + msg.MAX_LEN, ':');
   if (count_of_colon != 1) {
-    m_last_result = INVALID_MSG;
+    m_last_result = EOF_OR_ERROR;
     return false;
   }
 
@@ -143,6 +143,12 @@ bool Connection::receive(Message &msg) {
   
   msg.tag = tag_string;
   msg.data = payload_string;
+
+  //check for error tag
+  if (msg.tag == "err") {
+    m_last_result = EOF_OR_ERROR;
+    return false;
+  }
 
   //Check if the tag matches, payload matches, and the size of the message read is the same
   if (line == (ssize_t)strlen(cstring_message)) {
