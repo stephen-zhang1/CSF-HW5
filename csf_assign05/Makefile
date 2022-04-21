@@ -46,8 +46,8 @@ EXES = server sender receiver
 
 all : $(EXES)
 
-server : $(CXX_SERVER_OBJS) $(CXX_COMMON_OBJS) $(C_COMMON_OBJS)
-	$(CXX) -o $@ $(CXX_SERVER_OBJS) $(CXX_COMMON_OBJS) $(C_COMMON_OBJS) -lpthread
+server : $(CXX_SERVER_OBJS) $(CXX_COMMON_OBJS) $(C_COMMON_OBJS) $(CXX_CLIENT_OBJS)
+	$(CXX) -o $@ $(CXX_SERVER_OBJS) $(CXX_COMMON_OBJS) $(C_COMMON_OBJS) $(CXX_CLIENT_OBJS) -lpthread
 
 sender : $(CXX_SENDER_OBJS) $(CXX_COMMON_OBJS) $(CXX_CLIENT_OBJS) $(C_COMMON_OBJS)
 	$(CXX) -o $@ \

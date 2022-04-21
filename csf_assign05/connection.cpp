@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <algorithm>
+#include "client_util.h"
 
 Connection::Connection()
   : m_fd(-1)
@@ -58,6 +59,7 @@ bool Connection::send(const Message &msg) {
   // make sure that m_last_result is set appropriately
 
   //get the vector that holds the payload
+  /*
   std::vector<std::string> message_string = msg.split_payload();
   std::string data;
   for (std::vector<std::string>::iterator it = message_string.begin() ; it != message_string.end(); ++it) {
@@ -68,7 +70,7 @@ bool Connection::send(const Message &msg) {
   char * cmsg_str = new char[msg.MAX_LEN];
 
   //Make a string to copy into the C string
-  std::string message = msg.tag + ":" + data + "\n";
+  std::string message = msg.tag + ":" + msg.data + "\n";
   strcpy (cmsg_str, message.c_str());
   
   //Check if the bytes written is the same as length of the C string
@@ -79,6 +81,22 @@ bool Connection::send(const Message &msg) {
   }
   m_last_result = EOF_OR_ERROR; //Which result to put? EOF_OR_ERROR or INVALID_MSG
   return false;
+  */
+
+  char * cmsg_str = new char[msg.MAX_LEN];
+  std::string message = msg.tag + ":" + msg.data + "\n";
+  std::string trim_message = trim(message);
+  trim_message = trim_message + "\n";
+  strcpy(cmsg_str, trim_message.c_str());
+  
+  ssize_t bytes_written = rio_writen(m_fd, cmsg_str, msg.MAX_LEN);
+    if (bytes_written == (ssize_t)strlen(cmsg_str)) {
+    m_last_result = SUCCESS;
+    return true;
+  }
+  m_last_result = EOF_OR_ERROR; //Which result to put? EOF_OR_ERROR or INVALID_MSG
+  return false;
+
 }
 
 bool Connection::receive(Message &msg) {
