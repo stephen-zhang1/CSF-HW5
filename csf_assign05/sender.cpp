@@ -21,7 +21,6 @@ int main(int argc, char **argv) {
   server_port = std::stoi(argv[2]);
   username = argv[3];
 
-  // TODO: connect to server
   Connection conn; 
   conn.Connection::connect(server_hostname, server_port);
   // checks if connection is open
@@ -31,43 +30,58 @@ int main(int argc, char **argv) {
   }
 
   struct Message message(TAG_SLOGIN, username);
-  struct Message verify(TAG_OK, "ok");
+  bool good_state;
 
   // TODO: send slogin message
-  conn.Connection::send(message);
-  conn.Connection::receive(message); 
-  if (message.tag == TAG_ERR) {
+  good_state = conn.Connection::send(message);
+  if (!good_state) {
+    std::cerr << "Login failed\n";
+    return 3;
+  }
+  good_state = conn.Connection::receive(message); 
+  if (message.tag == TAG_ERR || !good_state) {
     std::cerr << "Login failed\n";
     return 3;  
   }
 
   //declaring message formation objects
   std::string data;
-  std::stringstream ss;
   bool is_done = false;
 
-  // TODO: loop reading commands from user, sending messages to
-  //       server as appropriate
+  // Data loop
   while (!is_done) {
     std::cout << ">";
-    std::getline(std::cin, data);
+    std::getline(std::cin, data); // check return value of getline
+    if (std::cin.bad()) {
+      cerr << "I/O Error\n"; 
+    } else if (!std::cin.eof()) {
+      cerr << "Format Error\n";
+    } else {
+      cerr << "Format or I/O Error\n";
+    }
+    std::stringstream ss(data);
+    std::string command;
+    ss >> command;
     message.data = data;
-    if (data == "/leave") {
+    if (command == "/leave") {
       message.tag = TAG_LEAVE;
-    } else if (data == "/join" && message.tag != TAG_LEAVE) {
+    } else if (command == "/join" && message.tag != TAG_LEAVE) {
       std::cerr << "Cannot join a room without leaving current room\n";
-    } else if (data == "/join") {
+    } else if (command == "/join") {
+      ss >> message.data;
       message.tag = TAG_JOIN;
-    } else if (data == "/quit") {
+    } else if (command == "/quit") {
       message.tag = TAG_QUIT;
       is_done = true;
-      // TODO: Add condition for other '/' commands?
     } else { //check if tag can be sent
       message.tag = TAG_SENDALL;
     }
-    conn.Connection::send(message);
-    conn.Connection::receive(message);
-    if (message.tag == TAG_ERR) {
+    good_state = conn.Connection::send(message);
+    if (!good_state) {
+    std::cerr << "Error occured when sending message\n";
+  }
+    good_state = conn.Connection::receive(message);
+    if (message.tag == TAG_ERR || !good_state) {
       std::cerr << message.data << "\n";
     }
   }
@@ -76,3 +90,5 @@ int main(int argc, char **argv) {
 
   return 0;
 }
+
+// Still don't understand the use of split_payload - what is it doing that we can use to our advantage?
