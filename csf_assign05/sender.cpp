@@ -53,11 +53,11 @@ int main(int argc, char **argv) {
     std::cout << ">";
     std::getline(std::cin, data); // check return value of getline
     if (std::cin.bad()) {
-      cerr << "I/O Error\n"; 
+      std::cerr << "I/O Error\n"; 
     } else if (!std::cin.eof()) {
-      cerr << "Format Error\n";
+      std::cerr << "Format Error\n";
     } else {
-      cerr << "Format or I/O Error\n";
+      std::cerr << "Format or I/O Error\n";
     }
     std::stringstream ss(data);
     std::string command;
