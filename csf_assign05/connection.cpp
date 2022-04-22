@@ -102,6 +102,7 @@ bool Connection::receive(Message &msg) {
   
   msg.tag = tag_string;
   msg.data = payload_string;
+  m_last_result = SUCCESS;
 
-    return true;
+  return true;
 }
