@@ -72,9 +72,9 @@ bool Connection::receive(Message &msg) {
 
   //check if u can split it in half at the colon for error handling
   //if it can be split then the message is valid
-  char * cstring_message = new char[msg.MAX_LEN];
+  char * cstring_message = new char[Message::MAX_LEN];
   
-  ssize_t line = rio_readlineb(&m_fdbuf, cstring_message, msg.MAX_LEN);
+  ssize_t line = rio_readlineb(&m_fdbuf, cstring_message, Message::MAX_LEN);
   
    if (line <= 0) {
     m_last_result = EOF_OR_ERROR;
@@ -89,7 +89,7 @@ bool Connection::receive(Message &msg) {
   //error if i read 0 or less than 0
   //Make sure that there is only 1 colon in the c string
   int count_of_colon = std::count(cstring_message, cstring_message + msg.MAX_LEN, ':');
-  if (count_of_colon != 1) {
+  if (count_of_colon == 0) {
     m_last_result = INVALID_MSG;
     return false;
   }

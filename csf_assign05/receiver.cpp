@@ -62,11 +62,13 @@ int main(int argc, char **argv) {
 
   while (loop) {
     good_state = conn.Connection::receive(message);
-    if (message.tag != TAG_DELIVERY || !good_state) {
+    if (message.tag != TAG_DELIVERY) {
     std::cerr << "Failed to receive message\n";
+    } else if (!good_state) {
+      loop = false;
     } else {
     std::vector<std::string> payload = message.split_payload();
-    std::cout << "[" << payload[1] << "]: [" << payload[2] << "]\n"; 
+    std::cout  << payload[1] << ": "  << payload[2]; 
     }
   }
 
