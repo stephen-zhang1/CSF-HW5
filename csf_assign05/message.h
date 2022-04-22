@@ -24,33 +24,13 @@ struct Message {
   // split using ':' as the separator
   std::vector<std::string> split_payload() const {
     std::vector<std::string> result;
-    // TODO: split the message data into fields separated by ':', add them
-    //       to result vector
-    // text:asdasdas:asdcewfcwes:ewsdfcwefrsdg:wesfdcqwazff
-    //split data separated by : and then add it to the result
-    /*
-    const char * colon_location = strchr(data.c_str(), ':'); //chunk of text before colon
-    std::string new_input;
-    int colon_index = 0;
-    int previous_index;
-    int size_of_text;
-    while (colon_location != NULL) {
-      previous_index = colon_index; //save where the previous index was to get the next input
-      colon_index = colon_location - data.c_str(); //index where the colon is
-      size_of_text = colon_index - previous_index; 
-      new_input = data.substr(previous_index + 1,size_of_text + 1); //the chunk of text put into a string
-      result.push_back(new_input); // add chunk of text before colon to vector
-      colon_location = strchr(colon_location + 1,':'); //shift to look at where the next colon is
-    }
-    */
-
     std::istringstream input;
     input.str(data);
+    //Read characters before each colon and add it to the vector
     for (std::string line; std::getline(input, line, ':'); ) {
         result.push_back(line);
     }
 
-    
     return result;
   }
 };

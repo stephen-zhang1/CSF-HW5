@@ -53,21 +53,12 @@ int main(int argc, char **argv) {
   while (is_done == false) {
     std::cout << "> ";
     std::getline(std::cin, data); // check return value of getline
-    //    if (std::cin.bad()) {
-    //  std::cerr << "I/O Error\n"; 
-    // } else if (!std::cin.eof()) {
-    //   std::cerr << "Format Error\n";
-    // } else {
-    //   std::cerr << "Format or I/O Error\n";
-    // }
     std::stringstream ss(data);
     std::string command;
     ss >> command;
     message.data = data;
     if (command == "/leave") {
       message.tag = TAG_LEAVE;
-      //  } else if (command == "/join" && message.tag != TAG_LEAVE) {
-      // std::cerr << "Cannot join a room without leaving current room\n";
     } else if (command == "/join") {
       ss >> message.data;
       message.tag = TAG_JOIN;
@@ -79,7 +70,7 @@ int main(int argc, char **argv) {
     }
     good_state = conn.Connection::send(message);
     if (!good_state) {
-    std::cerr << "Error occured when sending message\n";
+      std::cerr << "Error occured when sending message\n";
     }
     good_state = conn.Connection::receive(message);
     if (message.tag == TAG_ERR || !good_state) {
