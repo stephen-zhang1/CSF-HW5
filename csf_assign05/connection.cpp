@@ -20,7 +20,6 @@ Connection::Connection(int fd)
 }
 
 void Connection::connect(const std::string &hostname, int port) {
-  // TODO: call open_clientfd to connect to the server
   const char* char_port = std::to_string(port).c_str();
   m_fd = open_clientfd(hostname.c_str(), char_port);
   if (m_fd < 0) {
@@ -48,13 +47,13 @@ void Connection::close() {
 }
 
 bool Connection::send(const Message &msg) {
-  char * cmsg_str = new char[msg.MAX_LEN];
+  char * cmsg_str = new char[Message::MAX_LEN];
   std::string message = msg.tag + ":" + msg.data + "\n";
   std::string trim_message = trim(message); 
   trim_message = trim_message + "\n";
   strcpy(cmsg_str, trim_message.c_str());
   
-  ssize_t bytes_written = rio_writen(m_fd, cmsg_str, trim_message.size()); // write exact number of bytes in msg
+  ssize_t bytes_written = rio_writen(m_fd, cmsg_str, strlen(cmsg_str)); // write exact number of bytes in msg
     if (bytes_written == (ssize_t)strlen(cmsg_str)) {
     m_last_result = SUCCESS;
     return true;
@@ -98,7 +97,7 @@ bool Connection::receive(Message &msg) {
   std::string c(cstring_message);
   int tag_length = tag_index - cstring_message + 1;
   std::string tag_string = c.substr(0, tag_length - 1);
-  std::string payload_string = c.substr(tag_length + 1);
+  std::string payload_string = c.substr(tag_length, Message::MAX_LEN);
   
   msg.tag = tag_string;
   msg.data = payload_string;

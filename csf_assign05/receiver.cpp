@@ -20,25 +20,25 @@ int main(int argc, char **argv) {
 
   Connection conn;
 
-  // TODO: connect to server
+  // Connects to server
   conn.Connection::connect(server_hostname, server_port);
   if (!conn.Connection::is_open()) {
     std::cerr << "Failed to connect to server\n";
     return 2;
   }
-  // TODO: send rlogin and join messages (expect a response from
-  //       the server for each one)
+  
+  // Sending rlogin and join messages
   struct Message message(TAG_RLOGIN, username);
-  bool good_state;
+  bool good_state = true;
 
   good_state = conn.Connection::send(message);
   if (!good_state) {
-    std::cerr << message.data << "\n";
+    std::cerr << message.data;
     return 3;
   }
   good_state = conn.Connection::receive(message); 
   if (message.tag == TAG_ERR || !good_state) {
-    std::cerr << message.data << "\n";
+    std::cerr << message.data;
     return 3;  
   }
 
@@ -47,19 +47,17 @@ int main(int argc, char **argv) {
 
   good_state = conn.Connection::send(message);
   if (!good_state) {
-    std::cerr << message.data << "\n";
+    std::cerr << message.data;
     return 4;
   }
   good_state = conn.Connection::receive(message); 
   if (message.tag == TAG_ERR || !good_state) {
-    std::cerr << message.data << "\n";
+    std::cerr << message.data;
     return 4;  
   }
 
-  // TODO: loop waiting for messages from server
-  //       (which should be tagged with TAG_DELIVERY)
+  // Loop waiting for messages from server
   bool loop = true;
-
   while (loop) {
     good_state = conn.Connection::receive(message);
     if (message.tag != TAG_DELIVERY) {

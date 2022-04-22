@@ -23,6 +23,7 @@ int main(int argc, char **argv) {
 
   Connection conn; 
   conn.Connection::connect(server_hostname, server_port);
+  
   // checks if connection is open
   if (!conn.Connection::is_open()) {
     std::cerr << "Failed to connect to server\n";
@@ -30,27 +31,27 @@ int main(int argc, char **argv) {
   }
 
   struct Message message(TAG_SLOGIN, username);
-  bool good_state;
+  bool good_state = true;
 
-  // TODO: send slogin message
+  // sends slogin message
   good_state = conn.Connection::send(message);
   if (!good_state) {
-    std::cerr << "Login failed\n";
+    std::cerr << message.data;
     return 3;
   }
   good_state = conn.Connection::receive(message); 
   if (message.tag == TAG_ERR || !good_state) {
-    std::cerr << "Login failed for receive\n";
+    std::cerr << message.data;
     return 3;  
   }
 
-  //declaring message formation objects
+  // declaring message formation objects
   std::string data;
   bool is_done = false;
 
   // Data loop
   while (is_done == false) {
-    std::cout << ">";
+    std::cout << "> ";
     std::getline(std::cin, data); // check return value of getline
     //    if (std::cin.bad()) {
     //  std::cerr << "I/O Error\n"; 
@@ -79,10 +80,10 @@ int main(int argc, char **argv) {
     good_state = conn.Connection::send(message);
     if (!good_state) {
     std::cerr << "Error occured when sending message\n";
-  }
+    }
     good_state = conn.Connection::receive(message);
     if (message.tag == TAG_ERR || !good_state) {
-      std::cerr << message.data << "\n";
+      std::cerr << message.data;
     }
   }
 
@@ -90,5 +91,3 @@ int main(int argc, char **argv) {
 
   return 0;
 }
-
-// Still don't understand the use of split_payload - what is it doing that we can use to our advantage?
