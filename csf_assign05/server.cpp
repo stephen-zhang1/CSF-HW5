@@ -126,6 +126,10 @@ Room *Server::find_or_create_room(const std::string &room_name) {
   // this function can be called from multiple threads, so
   // make sure the mutex is held while accessing the shared
   // data (the map of room names to room objects)
+
+
+  //needs mutex synchronization because theres only 1 unique
+
   Guard g(m_lock);
 
   Room *room;
