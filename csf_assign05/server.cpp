@@ -34,18 +34,18 @@ struct ConnInfo {
 
 namespace {
 
-void chat_with_receiver(Connection *conn, Server *server ) {
+void chat_with_receiver(Connection *conn, Server *server, User *user) {
     //look at receiver diagram from server perspective
 
   // assume that the receiver has already sent "rlogin"
   // and "join" messages, so we know the receiver's username
   // and the name of the room the receiver wants to join
-  
-  User *user = new User(username);
-  Room *room = server->find_or_create_room(room_name);
+  Message *msg = new Message();
+  //conn->receive(msg);
+  Room *room = server->find_or_create_room(msg->data);
 
   room->add_member(user);
-  Message *msg = new Message();
+  
   while (true) {
     // try to dequeue a Message from the user's MessageQueue
     msg = user->mqueue.dequeue();
@@ -53,7 +53,7 @@ void chat_with_receiver(Connection *conn, Server *server ) {
     // message to the receiver. If the send is unsuccessful,
     // break out of the loop (because it's likely that the receiver
     // has exited and the connection is no longer valid)
-    if (user->mqueue.dequeue() != nullptr) {
+    if (msg != nullptr) {
       if (conn->send(*msg) == false) {
         delete msg;
         break;
@@ -67,16 +67,26 @@ void chat_with_receiver(Connection *conn, Server *server ) {
   
 }
 
-void chat_with_sender(Connection *conn, Server *server) {
+void chat_with_sender(Connection *conn, Server *server, User *user) {
   //look at sender diagram from server perspective
-  User *user = new User(username);
-  Room *room = server->find_or_create_room(room_name);
-
-  room->add_member(user);
+  //conn.receive
+  //m.data
   Message *msg = new Message();
+  Room *room = server->find_or_create_room(msg->data);
+
+  //room->add_member(user);
   //guard on message queue(enqueue dequeue), guard on remove member (room), add member (room), 
   while (true) {
-    
+    if (msg->tag == TAG_JOIN) {
+      server->find_or_create_room(msg->data);
+    } else if (msg->tag == TAG_LEAVE) {
+      room->remove_member(user);
+    } else if (msg->tag == TAG_SENDALL) {
+      room->broadcast_message(user->username, msg->data);
+    } else if (msg->tag == TAG_QUIT) {
+      conn->send(*msg);
+      break;
+    }
   }
   //join leave sendall quit are valid mesages
   //find or create room for join
