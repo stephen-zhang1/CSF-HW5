@@ -35,8 +35,7 @@ struct ConnInfo {
 namespace {
 
 void chat_with_receiver(Connection *conn, Server *server, User *user) {
-    //look at receiver diagram from server perspective
-
+  //look at receiver diagram from server perspective
   // assume that the receiver has already sent "rlogin"
   // and "join" messages, so we know the receiver's username
   // and the name of the room the receiver wants to join
@@ -112,6 +111,7 @@ void *worker(void *arg) {
   std::unique_ptr<ConnInfo> info(info_);
 
   Message msg;
+  User *user; //i declared a user object
 
   if (!info->conn->receive(msg)) {
     if (info->conn->get_last_result() == Connection::INVALID_MSG) {
@@ -124,11 +124,21 @@ void *worker(void *arg) {
     info->conn->send(Message(TAG_ERR, "first message should be slogin or rlogin"));
     return nullptr;
   }
-
-  std::string username = msg.data;
-  if (!info->conn->send(Message(TAG_OK, "welcome " + username))) {
+  
+  user->username = msg.data;
+  //std::string username = msg.data;
+  if (!info->conn->send(Message(TAG_OK, "welcome " + user->username))) {
     return nullptr;
   }
+
+  
+  if (msg.tag == TAG_SLOGIN) {
+    chat_with_sender(info->conn, info->server, user);
+  } else if (msg.tag == TAG_RLOGIN) {
+    chat_with_receiver(info->conn, info->server, user);
+  }
+  
+  
 
   // Just loop reading messages and sending an ok response for each one
   while (true) {

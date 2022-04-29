@@ -35,10 +35,16 @@ void Room::broadcast_message(const std::string &sender_username, const std::stri
   Guard g(lock);
   //MessageQueue queue;
   Message *msg = new Message(TAG_DELIVERY, message_text);
-  
+  /*
   for (std::set<User *>::iterator it=members.begin(); it!=members.end(); ++it) {
-    if (sender_username != it) {
+    if (sender_username != it->username) {
       it->mqueue.enqueue(msg);
+    }
+  }
+  */
+  for (User * user : members) {
+    if (sender_username != user->username) {
+      user->mqueue.enqueue(msg);
     }
   }
   
