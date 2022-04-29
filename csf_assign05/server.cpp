@@ -76,6 +76,7 @@ void chat_with_sender(Connection *conn, Server *server, User *user) {
   //room->add_member(user);
   //guard on message queue(enqueue dequeue), guard on remove member (room), add member (room), 
   while (true) {
+    conn->receive(*msg);
     if (msg->tag == TAG_JOIN) {
       server->find_or_create_room(msg->data);
     } else if (msg->tag == TAG_LEAVE) {
@@ -132,11 +133,6 @@ void *worker(void *arg) {
   }
 
   
-  if (msg.tag == TAG_SLOGIN) {
-    chat_with_sender(info->conn, info->server, user);
-  } else if (msg.tag == TAG_RLOGIN) {
-    chat_with_receiver(info->conn, info->server, user);
-  }
   
   
 
@@ -148,10 +144,15 @@ void *worker(void *arg) {
       }
       break;
     }
-
     if (!info->conn->send(Message(TAG_OK, "this is just a dummy response"))) {
       break;
     }
+  }
+
+  if (msg.tag == TAG_SLOGIN) {
+    chat_with_sender(info->conn, info->server, user);
+  } else if (msg.tag == TAG_RLOGIN) {
+    chat_with_receiver(info->conn, info->server, user);
   }
 
   return nullptr;
