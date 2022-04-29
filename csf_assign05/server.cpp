@@ -65,6 +65,7 @@ void chat_with_receiver(Connection *conn, Server *server, User *user, const std:
 
   // make sure to remove the User from the room
   room->remove_member(user);
+
   
 }
 
@@ -82,23 +83,43 @@ void chat_with_sender(Connection *conn, Server *server, User *user, const std::s
     if(!conn->receive(*msg)) {
        conn->send(Message(TAG_ERR, "invalid message!"));
     }
-    if (msg->tag == TAG_JOIN && room == NULL) {
-      room = server->find_or_create_room(msg->data);
-      room->add_member(user);
-      conn->send(Message(TAG_OK, "ok"));
+    if (msg->tag == TAG_JOIN) {
+      if (room != NULL) {
+        room->remove_member(user);
+        room = NULL;
+        //conn->send(Message(TAG_ERR, "Cannot join a room when in a room already!"));
+      }
+      if (room == NULL) {
+        room = server->find_or_create_room(msg->data);
+        room->add_member(user);
+        conn->send(Message(TAG_OK, "Joined new room"));
+      }
     } else if (msg->tag == TAG_LEAVE) {
-      room->remove_member(user);
-      conn->send(Message(TAG_OK, "ok"));
-      room = NULL;
+      if (room == NULL) {
+        conn->send(Message(TAG_ERR, "Must be in a room before leaving!"));
+      } else {
+        room->remove_member(user);
+        conn->send(Message(TAG_OK, "ok"));
+        room = NULL;
+      }
     } else if (msg->tag == TAG_SENDALL) {
-      room->broadcast_message(user->username, msg->data);
-      conn->send(Message(TAG_OK, "ok"));
+      if (room != NULL) {
+        room->broadcast_message(user->username, msg->data);
+        conn->send(Message(TAG_OK, "ok"));
+      } else {
+        conn->send(Message(TAG_ERR, "Must join a room before sending a message!"));
+      }
     } else if (msg->tag == TAG_QUIT) {
+      if (room != NULL) {
+        room->remove_member(user);
+      }
       conn->send(Message(TAG_OK, "ok"));
       break;
     }
   }
+  
   delete msg;
+
   //join leave sendall quit are valid mesages
   //find or create room for join
   //current room pointer to null
@@ -151,6 +172,12 @@ void *worker(void *arg) {
     while (msg.tag != TAG_JOIN) {
       if (!info->conn->receive(msg)) {
         info->conn->send(Message(TAG_ERR, "cannot receive message"));
+        delete user;
+        return nullptr;
+      } 
+      if (msg.tag == TAG_QUIT) {
+         info->conn->send(Message(TAG_OK, "goodbye"));
+        delete user;
         return nullptr;
       }
       if (msg.tag != TAG_JOIN) {
@@ -174,7 +201,10 @@ void *worker(void *arg) {
   }
 
   delete user;
+  info->conn->close();
+
   return nullptr;
+
 }
 
 }
