@@ -3,6 +3,7 @@
 #include "message_queue.h"
 #include "user.h"
 #include "room.h"
+#include "client_util.h"
 
 //mutex synchronization
 //collection of user objects only necessary for receivers
@@ -33,8 +34,8 @@ void Room::remove_member(User *user) {
 void Room::broadcast_message(const std::string &sender_username, const std::string &message_text) {
   // TODO: send a message to every (receiver) User in the room
   Guard g(lock);
-  //MessageQueue queue;
-  Message *msg = new Message(TAG_DELIVERY, message_text);
+  std::string message;
+  
   /*
   for (std::set<User *>::iterator it=members.begin(); it!=members.end(); ++it) {
     if (sender_username != it->username) {
@@ -44,11 +45,11 @@ void Room::broadcast_message(const std::string &sender_username, const std::stri
   */
   for (User * user : members) {
     if (sender_username != user->username) {
+      message = trim(this->room_name) + ":" + sender_username + ":" +  message_text;
+      Message *msg = new Message(TAG_DELIVERY, message);
       user->mqueue.enqueue(msg);
     }
   }
-  
-  delete msg;
   //iterate
   //if statement if the user = sender_username
   //if it is then skip over it

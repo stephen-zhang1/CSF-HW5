@@ -12,6 +12,7 @@
 #include "room.h"
 #include "guard.h"
 #include "server.h"
+#include "client_util.h"
 
 ////////////////////////////////////////////////////////////////////////
 // Server implementation data types
@@ -39,7 +40,7 @@ void chat_with_receiver(Connection *conn, Server *server, User *user, const std:
   // assume that the receiver has already sent "rlogin"
   // and "join" messages, so we know the receiver's username
   // and the name of the room the receiver wants to join
-  Message *msg = new Message();
+  Message *msg = new Message(TAG_OK, data);
   //conn->receive(msg);
   msg->data = data;
   Room *room = server->find_or_create_room(msg->data);
@@ -54,7 +55,7 @@ void chat_with_receiver(Connection *conn, Server *server, User *user, const std:
     // break out of the loop (because it's likely that the receiver
     // has exited and the connection is no longer valid)
     if (msg != nullptr) {
-      if (conn->send(*msg) == false) {
+      if (conn->send(Message(TAG_DELIVERY, msg->data)) == false) {
         delete msg;
         break;
       }
@@ -72,23 +73,28 @@ void chat_with_sender(Connection *conn, Server *server, User *user, const std::s
   //conn.receive
   //m.data
   // Call receive w/
-  Message *msg = new Message();
-  msg->data = data;
+  Message *msg = new Message(TAG_OK, data);
   Room *room = server->find_or_create_room(msg->data);
   room->add_member(user);
   //room->add_member(user);
   //guard on message queue(enqueue dequeue), guard on remove member (room), add member (room), 
   while (true) {
-    conn->receive(*msg);
-    if (msg->tag == TAG_JOIN) {
+    if(!conn->receive(*msg)) {
+       conn->send(Message(TAG_ERR, "invalid message!"));
+    }
+    if (msg->tag == TAG_JOIN && room == NULL) {
       room = server->find_or_create_room(msg->data);
       room->add_member(user);
+      conn->send(Message(TAG_OK, "ok"));
     } else if (msg->tag == TAG_LEAVE) {
       room->remove_member(user);
+      conn->send(Message(TAG_OK, "ok"));
+      room = NULL;
     } else if (msg->tag == TAG_SENDALL) {
       room->broadcast_message(user->username, msg->data);
+      conn->send(Message(TAG_OK, "ok"));
     } else if (msg->tag == TAG_QUIT) {
-      conn->send(*msg);
+      conn->send(Message(TAG_OK, "ok"));
       break;
     }
   }
@@ -130,7 +136,8 @@ void *worker(void *arg) {
     info->conn->send(Message(TAG_ERR, "first message should be slogin or rlogin"));
     return nullptr;
   }
-  
+
+  msg.data = trim(msg.data);
   user->username = msg.data;
   //std::string username = msg.data;
   if (!info->conn->send(Message(TAG_OK, "welcome " + user->username))) {
@@ -143,13 +150,14 @@ void *worker(void *arg) {
     // Loop until you get a join message
     while (msg.tag != TAG_JOIN) {
       if (!info->conn->receive(msg)) {
-        info->conn->send(Message(TAG_ERR, "invalid message"));
+        info->conn->send(Message(TAG_ERR, "cannot receive message"));
         return nullptr;
       }
       if (msg.tag != TAG_JOIN) {
         info->conn->send(Message(TAG_ERR, "you must enter a room before sending a message"));
       }
     }
+    info->conn->send(Message(TAG_OK, "ok"));
     chat_with_sender(info->conn, info->server, user, msg.data);
   } else if (msg.tag == TAG_RLOGIN) {
       while (msg.tag != TAG_JOIN) {
@@ -158,9 +166,10 @@ void *worker(void *arg) {
           return nullptr;
         }
         if (msg.tag != TAG_JOIN) {
-          info->conn->send(Message(TAG_ERR, "you must enter a room before sending a message"));
+          info->conn->send(Message(TAG_ERR, "you must enter a room to receive messages"));
         }
     }
+      info->conn->send(Message(TAG_OK, "ok")); 
     chat_with_receiver(info->conn, info->server, user, msg.data);
   }
 
