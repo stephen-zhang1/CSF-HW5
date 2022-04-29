@@ -34,12 +34,11 @@ void Room::broadcast_message(const std::string &sender_username, const std::stri
   // TODO: send a message to every (receiver) User in the room
   Guard g(lock);
   //MessageQueue queue;
-  Message *msg = new Message(sender_username, message_text);
-  //TODO COME BACK TO THIS PERSON MIGHT BE NOT WHAT WE THINK
+  Message *msg = new Message(TAG_DELIVERY, message_text);
+  
   for (std::set<User *>::iterator it=members.begin(); it!=members.end(); ++it) {
-    User * person = *it;
-    if (sender_username != person->username) {
-      person->mqueue.MessageQueue::enqueue(msg);
+    if (sender_username != it) {
+      it->mqueue.enqueue(msg);
     }
   }
   
