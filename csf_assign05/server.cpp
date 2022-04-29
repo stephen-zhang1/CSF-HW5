@@ -34,6 +34,63 @@ struct ConnInfo {
 
 namespace {
 
+void chat_with_receiver(Connection *conn, Server *server ) {
+    //look at receiver diagram from server perspective
+
+  // assume that the receiver has already sent "rlogin"
+  // and "join" messages, so we know the receiver's username
+  // and the name of the room the receiver wants to join
+  
+  User *user = new User(username);
+  Room *room = server->find_or_create_room(room_name);
+
+  room->add_member(user);
+  Message *msg = new Message();
+  while (true) {
+    // try to dequeue a Message from the user's MessageQueue
+    msg = user->mqueue.dequeue();
+    // if a Message was successfully dequeued, send a "delivery"
+    // message to the receiver. If the send is unsuccessful,
+    // break out of the loop (because it's likely that the receiver
+    // has exited and the connection is no longer valid)
+    if (user->mqueue.dequeue() != nullptr) {
+      if (conn->send(*msg) == false) {
+        delete msg;
+        break;
+      }
+    }
+    delete msg;
+  }
+
+  // make sure to remove the User from the room
+  room->remove_member(user);
+  
+}
+
+void chat_with_sender(Connection *conn, Server *server) {
+  //look at sender diagram from server perspective
+  User *user = new User(username);
+  Room *room = server->find_or_create_room(room_name);
+
+  room->add_member(user);
+  Message *msg = new Message();
+  //guard on message queue(enqueue dequeue), guard on remove member (room), add member (room), 
+  while (true) {
+    
+  }
+  //join leave sendall quit are valid mesages
+  //find or create room for join
+  //current room pointer to null
+  //sendall call broadcast message
+  //quit send back an ok and break out of the loop
+}
+
+
+//call broadcast message on room object when receiver thread receives message
+//broadcast message creates message objects put into the queues 
+
+
+//worker determines whether the client is a sender or receiver 
 void *worker(void *arg) {
   pthread_detach(pthread_self());
 

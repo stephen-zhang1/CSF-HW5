@@ -2,6 +2,8 @@
 #include <ctime>
 #include "message_queue.h"
 #include <semaphore.h>
+#include "guard.h"
+//send message from sender thread to receiver thread
 
 //semaphor only keeps track of how many messages
 MessageQueue::MessageQueue() {
@@ -19,14 +21,17 @@ MessageQueue::~MessageQueue() {
 void MessageQueue::enqueue(Message *msg) {
   // TODO: put the specified message on the queue
   Guard g(m_lock);
-  Guard 
+  m_messages.push_back(msg);
 
 
   // be sure to notify any thread waiting for a message to be
   // available by calling sem_post
+  sem_post(&m_avail);
+
 }
 
 Message *MessageQueue::dequeue() {
+  Guard g(m_lock);
   struct timespec ts;
 
   // get the current time using clock_gettime:
@@ -40,8 +45,11 @@ Message *MessageQueue::dequeue() {
 
   // TODO: call sem_timedwait to wait up to 1 second for a message
   //       to be available, return nullptr if no message is available
-
+  if (sem_timedwait(&m_avail, &ts)  == -1) {
+    return nullptr;
+  }
   // TODO: remove the next message from the queue, return it
-  Message *msg = nullptr;
+  Message *msg = m_messages.front();
+  m_messages.pop_front();
   return msg;
 }
