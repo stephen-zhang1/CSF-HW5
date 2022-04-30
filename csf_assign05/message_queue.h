@@ -6,10 +6,6 @@
 #include <semaphore.h>
 struct Message;
 
-//needs a mutex
-//
-
-
 // This data type represents a queue of Messages waiting to
 // be delivered to a receiver
 class MessageQueue {

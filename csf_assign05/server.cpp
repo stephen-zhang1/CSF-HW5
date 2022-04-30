@@ -36,12 +36,10 @@ struct ConnInfo {
 namespace {
 
 void chat_with_receiver(Connection *conn, Server *server, User *user, const std::string &data) {
-  //look at receiver diagram from server perspective
   // assume that the receiver has already sent "rlogin"
   // and "join" messages, so we know the receiver's username
   // and the name of the room the receiver wants to join
   Message *msg = new Message(TAG_OK, data);
-  //conn->receive(msg);
   msg->data = data;
   Room *room = server->find_or_create_room(msg->data);
 
@@ -70,24 +68,21 @@ void chat_with_receiver(Connection *conn, Server *server, User *user, const std:
 }
 
 void chat_with_sender(Connection *conn, Server *server, User *user, const std::string &data) {
-  //look at sender diagram from server perspective
-  //conn.receive
-  //m.data
-  // Call receive w/
+  //Create a new message and add the sender to the room
   Message *msg = new Message(TAG_OK, data);
   Room *room = server->find_or_create_room(msg->data);
   room->add_member(user);
-  //room->add_member(user);
-  //guard on message queue(enqueue dequeue), guard on remove member (room), add member (room), 
+  //Loop until the message tag is quit
   while (true) {
+    //Check if the messsage can be received
     if(!conn->receive(*msg)) {
        conn->send(Message(TAG_ERR, "invalid message!"));
     }
     if (msg->tag == TAG_JOIN) {
+      //Check what happens when the user tries to join and is in a room or not
       if (room != NULL) {
         room->remove_member(user);
         room = NULL;
-        //conn->send(Message(TAG_ERR, "Cannot join a room when in a room already!"));
       }
       if (room == NULL) {
         room = server->find_or_create_room(msg->data);
@@ -95,6 +90,7 @@ void chat_with_sender(Connection *conn, Server *server, User *user, const std::s
         conn->send(Message(TAG_OK, "Joined new room"));
       }
     } else if (msg->tag == TAG_LEAVE) {
+      //Check what happens when the user tries to leave and is in a room or not
       if (room == NULL) {
         conn->send(Message(TAG_ERR, "Must be in a room before leaving!"));
       } else {
@@ -103,6 +99,7 @@ void chat_with_sender(Connection *conn, Server *server, User *user, const std::s
         room = NULL;
       }
     } else if (msg->tag == TAG_SENDALL) {
+      //Check what happens when the user tries to send a message and is in a room or not
       if (room != NULL) {
         room->broadcast_message(user->username, msg->data);
         conn->send(Message(TAG_OK, "ok"));
@@ -110,6 +107,7 @@ void chat_with_sender(Connection *conn, Server *server, User *user, const std::s
         conn->send(Message(TAG_ERR, "Must join a room before sending a message!"));
       }
     } else if (msg->tag == TAG_QUIT) {
+      //Check what happens when the user tries to quit
       if (room != NULL) {
         room->remove_member(user);
       }
@@ -119,18 +117,7 @@ void chat_with_sender(Connection *conn, Server *server, User *user, const std::s
   }
   
   delete msg;
-
-  //join leave sendall quit are valid mesages
-  //find or create room for join
-  //current room pointer to null
-  //sendall call broadcast message
-  //quit send back an ok and break out of the loop
 }
-
-
-//call broadcast message on room object when receiver thread receives message
-//broadcast message creates message objects put into the queues 
-
 
 //worker determines whether the client is a sender or receiver 
 void *worker(void *arg) {
@@ -144,8 +131,9 @@ void *worker(void *arg) {
   std::unique_ptr<ConnInfo> info(info_);
 
   Message msg;
-  User *user = new User(""); //i declared a user object
+  User *user = new User("");
 
+  //Check if a message can be received
   if (!info->conn->receive(msg)) {
     if (info->conn->get_last_result() == Connection::INVALID_MSG) {
       info->conn->send(Message(TAG_ERR, "invalid message"));
@@ -153,20 +141,22 @@ void *worker(void *arg) {
     return nullptr;
   }
 
+  //Ensure that the user has to be logged in first before making any other commands
   if (msg.tag != TAG_SLOGIN && msg.tag != TAG_RLOGIN) {
     info->conn->send(Message(TAG_ERR, "first message should be slogin or rlogin"));
     return nullptr;
   }
 
+  //Make sure to remove any whitespace from the message
   msg.data = trim(msg.data);
   user->username = msg.data;
-  //std::string username = msg.data;
+  
+  //Welcome message for the user
   if (!info->conn->send(Message(TAG_OK, "welcome " + user->username))) {
     return nullptr;
   }
-  // Just loop reading messages and sending an ok response for each one
 
-
+  //Ensure that the sender does slogin and joins a room before being able to send messages
   if (msg.tag == TAG_SLOGIN) {
     // Loop until you get a join message
     while (msg.tag != TAG_JOIN) {
@@ -187,6 +177,7 @@ void *worker(void *arg) {
     info->conn->send(Message(TAG_OK, "ok"));
     chat_with_sender(info->conn, info->server, user, msg.data);
   } else if (msg.tag == TAG_RLOGIN) {
+    //Ensure that the receiver does rlogin and joins a room before being able to receive messages
       while (msg.tag != TAG_JOIN) {
         if (!info->conn->receive(msg)) {
           info->conn->send(Message(TAG_ERR, "invalid message"));
@@ -253,12 +244,7 @@ Room *Server::find_or_create_room(const std::string &room_name) {
   // this function can be called from multiple threads, so
   // make sure the mutex is held while accessing the shared
   // data (the map of room names to room objects)
-
-
-  //needs mutex synchronization because theres only 1 unique
-
   Guard g(m_lock);
-
   Room *room;
 
   auto i = m_rooms.find(room_name);
